@@ -1,175 +1,154 @@
-import { useState } from "react";
 import "./styles.css";
 
-export default function App() {
-  const [screen, setScreen] = useState("home");
-
-  const animals = {
-    luzon: [
-      {
-        name: "Philippine Eagle",
-        type: "Legendary Bird",
-        rarity: "SSS",
-        desc: "The ruler of Philippine skies with gigantic wings and deadly vision.",
-        img: "/eagle.jpg",
-      },
-
-      {
-        name: "Tamaraw",
-        type: "Ground Beast",
-        rarity: "S",
-        desc: "A rare wild buffalo hidden deep in Mindoro forests.",
-        img: "/tamaraw.jpg",
-      },
-    ],
-
-    visayas: [
-      {
-        name: "Tarsier",
-        type: "Forest Creature",
-        rarity: "A",
-        desc: "Tiny night hunter with glowing eyes and silent movement.",
-        img: "/tarsier.jpg",
-      },
-
-      {
-        name: "Whale Shark",
-        type: "Ocean Giant",
-        rarity: "SS",
-        desc: "Massive peaceful sea guardian swimming through tropical waters.",
-        img: "/whaleshark.jpg",
-      },
-    ],
-
-    mindanao: [
-      {
-        name: "Dugong",
-        type: "Water Creature",
-        rarity: "S",
-        desc: "A peaceful ocean creature related to ancient manatees.",
-        img: "/dugong.jpg",
-      },
-
-      {
-        name: "Philippine Crocodile",
-        type: "Reptile",
-        rarity: "SS",
-        desc: "One of the rarest and most dangerous reptiles alive.",
-        img: "/crocodile.jpg",
-      },
-    ],
+function App() {
+  const openScanner = () => {
+    window.open("https://ancient-cherry.vercel.app", "_blank");
   };
-
-  const renderAnimals = (region: keyof typeof animals) => (
-    <div className="content">
-      <button className="backBtn" onClick={() => setScreen("home")}>
-        ← Back
-      </button>
-
-      <h1 className="regionTitle">{region.toUpperCase()} REGION</h1>
-
-      {animals[region].map((animal, index) => (
-        <div className="card" key={index}>
-          <img src={animal.img} className="animalImg" />
-
-          <div className="cardBody">
-            <h2>
-              #{index + 1} {animal.name}
-            </h2>
-
-            <div className="badgeContainer">
-              <span className="typeBadge">{animal.type}</span>
-
-              <span className="rarityBadge">{animal.rarity}</span>
-            </div>
-
-            <p>{animal.desc}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
 
   return (
     <div className="app">
-      {/* TOPBAR */}
-      <div className="topbar">
-        <div>☰</div>
+      {/* HEADER */}
+      <div className="header">
+        <div className="lights">
+          <span className="light red"></span>
+          <span className="light yellow"></span>
+          <span className="light green"></span>
+        </div>
 
-        <div className="logo">WildDex</div>
+        {/* SCANNER BUTTON */}
+        <button className="scannerOrb" onClick={openScanner}></button>
 
-        <div>⚙</div>
+        <h1>PHILIPPINE POKÉDEX</h1>
+
+        <p>AI-powered wildlife scanner inspired by classic Pokédex systems.</p>
       </div>
 
-      {/* HOME */}
-      {screen === "home" && (
-        <div className="content">
-          <div className="mapCard">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/c/c5/Ph_regions_map.png"
-              className="mapImg"
-            />
+      {/* SCANNER BUTTON BIG */}
+      <button className="scanButton" onClick={openScanner}>
+        📷 OPEN WILDSCAN
+      </button>
 
-            <h1>Philippine WildDex</h1>
+      {/* LUZON */}
+      <h2 className="regionTitle">🌿 Luzon Region</h2>
 
-            <p>Explore Philippine wildlife regions.</p>
+      <div className="cards-container">
+        {/* EAGLE */}
+        <div className="animal-card">
+          <img src="eagle.jpg" alt="Philippine Eagle" />
+
+          <div className="card-content">
+            <h2>#001 Philippine Eagle</h2>
+
+            <div className="tags">
+              <span className="type flying">Flying</span>
+
+              <span className="rarity legendary">Legendary</span>
+            </div>
+
+            <p>
+              A massive sky predator known for its terrifying eyesight and
+              immense wingspan.
+            </p>
           </div>
-
-          <button
-            className="regionBtn luzon"
-            onClick={() => setScreen("luzon")}
-          >
-            🌿 Luzon Region
-          </button>
-
-          <button
-            className="regionBtn visayas"
-            onClick={() => setScreen("visayas")}
-          >
-            🌊 Visayas Region
-          </button>
-
-          <button
-            className="regionBtn mindanao"
-            onClick={() => setScreen("mindanao")}
-          >
-            🌴 Mindanao Region
-          </button>
-
-          <button
-            className="cameraBtn"
-            onClick={() => window.open("https://ancient-cherry.vercel.app")}
-          >
-            📷 Open WildScan Camera
-          </button>
         </div>
-      )}
 
-      {/* REGION PAGES */}
-      {screen === "luzon" && renderAnimals("luzon")}
+        {/* TAMARAW */}
+        <div className="animal-card">
+          <img src="tamaraw.jpg" alt="Tamaraw" />
 
-      {screen === "visayas" && renderAnimals("visayas")}
+          <div className="card-content">
+            <h2>#002 Tamaraw</h2>
 
-      {screen === "mindanao" && renderAnimals("mindanao")}
+            <div className="tags">
+              <span className="type ground">Ground</span>
+            </div>
 
-      {/* BOTTOM NAV */}
-      <div className="bottomNav">
-        <button onClick={() => setScreen("home")}>🏠</button>
+            <p>
+              This rare beast roams the mountains of Mindoro with unmatched
+              endurance.
+            </p>
+          </div>
+        </div>
+      </div>
 
-        <button onClick={() => alert("🎒 Backpack System Coming Soon")}>
-          🎒
-        </button>
+      {/* VISAYAS */}
+      <h2 className="regionTitle">🌊 Visayas Region</h2>
 
-        <button
-          onClick={() => window.open("https://YOUR-VERCEL-LINK.vercel.app")}
-        >
-          📷
-        </button>
+      <div className="cards-container">
+        {/* TARSIER */}
+        <div className="animal-card">
+          <img src="tarsier.jpg" alt="Tarsier" />
 
-        <button onClick={() => alert("🛒 WildStore Coming Soon")}>🛒</button>
+          <div className="card-content">
+            <h2>#003 Tarsier</h2>
 
-        <button onClick={() => alert("🛡 Clan System Coming Soon")}>🛡</button>
+            <div className="tags">
+              <span className="type flying">Forest</span>
+            </div>
+
+            <p>
+              A tiny nocturnal primate with giant glowing eyes and incredible
+              jumping ability.
+            </p>
+          </div>
+        </div>
+
+        {/* WHALE SHARK */}
+        <div className="animal-card">
+          <img src="whaleshark.jpg" alt="Whale Shark" />
+
+          <div className="card-content">
+            <h2>#004 Whale Shark</h2>
+
+            <div className="tags">
+              <span className="type ground">Ocean</span>
+
+              <span className="rarity legendary">Giant</span>
+            </div>
+
+            <p>The gentle giant of Philippine seas.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* MINDANAO */}
+      <h2 className="regionTitle">🌴 Mindanao Region</h2>
+
+      <div className="cards-container">
+        {/* DUGONG */}
+        <div className="animal-card">
+          <img src="dugong.jpg" alt="Dugong" />
+
+          <div className="card-content">
+            <h2>#005 Dugong</h2>
+
+            <div className="tags">
+              <span className="type ground">Water</span>
+            </div>
+
+            <p>A peaceful marine mammal related to manatees.</p>
+          </div>
+        </div>
+
+        {/* CROCODILE */}
+        <div className="animal-card">
+          <img src="crocodile.jpg" alt="Philippine Crocodile" />
+
+          <div className="card-content">
+            <h2>#006 Philippine Crocodile</h2>
+
+            <div className="tags">
+              <span className="type ground">Reptile</span>
+
+              <span className="rarity legendary">Rare</span>
+            </div>
+
+            <p>One of the rarest crocodile species in the world.</p>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
+export default App;
