@@ -29,7 +29,7 @@ function App() {
         modelRef.current = await tmImage.load(modelURL, metadataURL);
       }
 
-      /* NATIVE WEBCAM STREAM (Bypasses Teachable Machine Mobile Crash) */
+      /* NATIVE WEBCAM STREAM */
       const constraints = {
         video: {
           facingMode: { ideal: currentMode },
@@ -41,7 +41,6 @@ function App() {
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // Delay slightly to give the UI a moment to catch up
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -66,14 +65,12 @@ function App() {
     setFacingMode(newMode);
 
     if (cameraOpen) {
-      // Turn off current native stream tracks completely
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach((track) => track.stop());
         videoRef.current.srcObject = null;
       }
 
-      // Give the hardware a tiny break, then reboot with new lens choice
       await new Promise((resolve) => setTimeout(resolve, 300));
       await openScanner(newMode);
     }
@@ -83,13 +80,11 @@ function App() {
   async function captureAndPredict() {
     if (!videoRef.current || !modelRef.current) return;
 
-    // Freeze frame by pausing the video element
     videoRef.current.pause();
     setIsCaptured(true);
     setPrediction("Analyzing data...");
 
     try {
-      // Predict directly from the native HTML5 Video element
       const predictions = await modelRef.current.predict(videoRef.current);
 
       let highest = predictions[0];
@@ -113,7 +108,7 @@ function App() {
     setIsCaptured(false);
     setPrediction("Waiting for scan...");
     if (videoRef.current) {
-      videoRef.current.play(); // Simply unpause video stream
+      videoRef.current.play();
     }
   }
 
@@ -178,7 +173,7 @@ function App() {
                 borderRadius: "20px",
                 border: "4px solid black",
                 display: "block",
-                transform: facingMode === "user" ? "scaleX(-1)" : "none", // Only mirror front camera
+                transform: facingMode === "user" ? "scaleX(-1)" : "none",
               }}
             />
             {loading && (
@@ -240,7 +235,8 @@ function App() {
 
       {/* POKEDEX CARDS */}
       {!cameraOpen && (
-        <div className="cards-wrapper" style={{ padding: "20px" }}>
+        <div className="regions-wrapper" style={{ padding: "0 10px" }}>
+          {/* LUZON */}
           <h2 className="regionTitle">🌿 Luzon Region</h2>
           <div className="cards-container">
             <div className="animal-card">
@@ -255,6 +251,68 @@ function App() {
                   The Philippine Eagle is one of the rarest and most powerful
                   birds in the world.
                 </p>
+              </div>
+            </div>
+            <div className="animal-card">
+              <img src="tamaraw.jpg" alt="Tamaraw" />
+              <div className="card-content">
+                <h2>#002 Tamaraw</h2>
+                <div className="tags">
+                  <span className="type ground">Ground</span>
+                </div>
+                <p>A rare wild buffalo native to Mindoro.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* VISAYAS */}
+          <h2 className="regionTitle">🌊 Visayas Region</h2>
+          <div className="cards-container">
+            <div className="animal-card">
+              <img src="tarsier.jpg" alt="Tarsier" />
+              <div className="card-content">
+                <h2>#003 Tarsier</h2>
+                <div className="tags">
+                  <span className="type flying">Forest</span>
+                </div>
+                <p>A tiny nocturnal primate with massive glowing eyes.</p>
+              </div>
+            </div>
+            <div className="animal-card">
+              <img src="whaleshark.jpg" alt="Whale Shark" />
+              <div className="card-content">
+                <h2>#004 Whale Shark</h2>
+                <div className="tags">
+                  <span className="type ground">Ocean</span>
+                  <span className="rarity legendary">Giant</span>
+                </div>
+                <p>The gentle giant of Philippine seas.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* MINDANAO */}
+          <h2 className="regionTitle">🌴 Mindanao Region</h2>
+          <div className="cards-container">
+            <div className="animal-card">
+              <img src="dugong.jpg" alt="Dugong" />
+              <div className="card-content">
+                <h2>#005 Dugong</h2>
+                <div className="tags">
+                  <span className="type ground">Water</span>
+                </div>
+                <p>A peaceful marine mammal.</p>
+              </div>
+            </div>
+            <div className="animal-card">
+              <img src="crocodile.jpg" alt="Philippine Crocodile" />
+              <div className="card-content">
+                <h2>#006 Philippine Crocodile</h2>
+                <div className="tags">
+                  <span className="type ground">Reptile</span>
+                  <span className="rarity legendary">Rare</span>
+                </div>
+                <p>One of the rarest crocodile species on Earth.</p>
               </div>
             </div>
           </div>
