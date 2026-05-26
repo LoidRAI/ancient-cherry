@@ -3,23 +3,21 @@ import * as tmImage from "@teachablemachine/image";
 import { useRef, useState } from "react";
 
 function App() {
-  const webcamRef = useRef<any>(null);
-  const webcamContainerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const modelRef = useRef<any>(null);
-  const animationRef = useRef<number>();
 
   const [prediction, setPrediction] = useState("Waiting for scan...");
   const [cameraOpen, setCameraOpen] = useState(false);
   const [isCaptured, setIsCaptured] = useState(false);
-
-  // Track which camera lens we are using ("environment" = back, "user" = front)
-  const [facingMode, setFacingMode] = useState("environment");
+  const [facingMode, setFacingMode] = useState("environment"); // Default to rear lens
+  const [loading, setLoading] = useState(false);
 
   const URL = "https://teachablemachine.withgoogle.com/models/qjWRn0dXc/";
 
   /* OPEN CAMERA */
   const openScanner = async (currentMode = facingMode) => {
     try {
+      setLoading(true);
       setCameraOpen(true);
       setIsCaptured(false);
       setPrediction("Waiting for scan...");
@@ -27,47 +25,33 @@ function App() {
       /* LOAD MODEL */
       const modelURL = URL + "model.json";
       const metadataURL = URL + "metadata.json";
-
       if (!modelRef.current) {
         modelRef.current = await tmImage.load(modelURL, metadataURL);
       }
 
-      /* CREATE WEBCAM */
-      // FIX 1: Only mirror the camera if we are using the front/user lens.
-      const isFront = currentMode === "user";
+      /* NATIVE WEBCAM STREAM (Bypasses Teachable Machine Mobile Crash) */
+      const constraints = {
+        video: {
+          facingMode: { ideal: currentMode },
+          width: { ideal: 400 },
+          height: { ideal: 400 },
+        },
+        audio: false,
+      };
 
-      // FIX 2: Lower the resolution to 250x250.
-      // Many phones crash if you ask for an exact 350x350 square.
-      const webcam = new tmImage.Webcam(250, 250, isFront);
-      webcamRef.current = webcam;
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      /* ASK CAMERA PERMISSION */
-      await webcam.setup({ facingMode: currentMode });
-
-      /* START CAMERA */
-      await webcam.play();
-
-      /* WAIT FOR VIDEO */
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      /* SHOW LIVE VIDEO */
-      if (webcamContainerRef.current) {
-        webcamContainerRef.current.innerHTML = "";
-        const canvas = webcam.canvas;
-        canvas.style.width = "100%";
-        canvas.style.maxWidth = "350px"; // We can still stretch it via CSS to look good
-        canvas.style.borderRadius = "20px";
-        canvas.style.border = "4px solid black";
-        canvas.style.display = "block";
-        canvas.style.margin = "0 auto";
-        webcamContainerRef.current.appendChild(canvas);
-      }
-
-      /* START VIDEO FEED */
-      animationRef.current = window.requestAnimationFrame(liveFeedLoop);
+      // Delay slightly to give the UI a moment to catch up
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        setLoading(false);
+      }, 300);
     } catch (error: any) {
       console.error(error);
-      // FIX 3: Show the ACTUAL error message the phone is throwing!
+      setLoading(false);
+      setCameraOpen(false);
       alert(
         `Camera failed to start. Error: ${
           error.message || error.name || "Unknown"
@@ -78,47 +62,35 @@ function App() {
 
   /* FLIP CAMERA */
   const flipCamera = async () => {
-    // Determine the opposite camera
     const newMode = facingMode === "user" ? "environment" : "user";
-    setFacingMode(newMode); // Save to state
+    setFacingMode(newMode);
 
-    // If the camera is currently on, we need to restart it
     if (cameraOpen) {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      if (webcamRef.current) {
-        webcamRef.current.stop();
-        webcamRef.current = null;
+      // Turn off current native stream tracks completely
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => track.stop());
+        videoRef.current.srcObject = null;
       }
 
-      // Start the scanner again with the new lens
+      // Give the hardware a tiny break, then reboot with new lens choice
+      await new Promise((resolve) => setTimeout(resolve, 300));
       await openScanner(newMode);
     }
   };
 
-  /* LIVE FEED LOOP */
-  function liveFeedLoop() {
-    if (!webcamRef.current) return;
-    webcamRef.current.update();
-    animationRef.current = window.requestAnimationFrame(liveFeedLoop);
-  }
-
   /* SNAP & SCAN */
   async function captureAndPredict() {
-    if (!webcamRef.current || !webcamRef.current.canvas || !modelRef.current)
-      return;
+    if (!videoRef.current || !modelRef.current) return;
 
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
-
-    webcamRef.current.pause();
+    // Freeze frame by pausing the video element
+    videoRef.current.pause();
     setIsCaptured(true);
     setPrediction("Analyzing data...");
 
     try {
-      const predictions = await modelRef.current.predict(
-        webcamRef.current.canvas
-      );
+      // Predict directly from the native HTML5 Video element
+      const predictions = await modelRef.current.predict(videoRef.current);
 
       let highest = predictions[0];
       for (let i = 1; i < predictions.length; i++) {
@@ -137,19 +109,20 @@ function App() {
   }
 
   /* RETAKE PHOTO */
-  async function retakePhoto() {
+  function retakePhoto() {
     setIsCaptured(false);
     setPrediction("Waiting for scan...");
-    await webcamRef.current.play();
-    animationRef.current = window.requestAnimationFrame(liveFeedLoop);
+    if (videoRef.current) {
+      videoRef.current.play(); // Simply unpause video stream
+    }
   }
 
   /* CLOSE CAMERA */
   const closeScanner = () => {
-    if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    if (webcamRef.current) {
-      webcamRef.current.stop();
-      webcamRef.current = null;
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
     }
     setCameraOpen(false);
     setIsCaptured(false);
@@ -185,14 +158,56 @@ function App() {
         <div className="cameraSection">
           <h2>WildScan AI Camera</h2>
 
-          <div ref={webcamContainerRef}></div>
+          <div
+            className="video-wrapper"
+            style={{
+              position: "relative",
+              width: "100%",
+              maxWidth: "350px",
+              margin: "0 auto",
+            }}
+          >
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              style={{
+                width: "100%",
+                aspectRatio: "1/1",
+                objectFit: "cover",
+                borderRadius: "20px",
+                border: "4px solid black",
+                display: "block",
+                transform: facingMode === "user" ? "scaleX(-1)" : "none", // Only mirror front camera
+              }}
+            />
+            {loading && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  color: "#fff",
+                  background: "rgba(0,0,0,0.7)",
+                  padding: "10px 20px",
+                  borderRadius: "10px",
+                }}
+              >
+                Loading Camera...
+              </div>
+            )}
+          </div>
 
           <div className="predictionBox">{prediction}</div>
 
           <div className="camera-controls">
-            {/* Toggle between Capture and Retake */}
             {!isCaptured ? (
-              <button className="scanButton" onClick={captureAndPredict}>
+              <button
+                className="scanButton"
+                onClick={captureAndPredict}
+                disabled={loading}
+              >
                 📸 SNAP & SCAN
               </button>
             ) : (
@@ -201,11 +216,11 @@ function App() {
               </button>
             )}
 
-            {/* FLIP CAMERA BUTTON */}
             {!isCaptured && (
               <button
                 className="scanButton"
                 onClick={flipCamera}
+                disabled={loading}
                 style={{ marginTop: "10px", backgroundColor: "#3b82f6" }}
               >
                 🔄 FLIP CAMERA
@@ -225,8 +240,7 @@ function App() {
 
       {/* POKEDEX CARDS */}
       {!cameraOpen && (
-        <>
-          {/* LUZON */}
+        <div className="cards-wrapper" style={{ padding: "20px" }}>
           <h2 className="regionTitle">🌿 Luzon Region</h2>
           <div className="cards-container">
             <div className="animal-card">
@@ -243,9 +257,8 @@ function App() {
                 </p>
               </div>
             </div>
-            {/* You can add the rest of your cards back here! */}
           </div>
-        </>
+        </div>
       )}
     </div>
   );
