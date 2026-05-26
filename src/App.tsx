@@ -138,7 +138,7 @@ export default function App() {
 
           <button
             className="cameraBtn"
-            onClick={() => window.open("https://YOUR-VERCEL-LINK.vercel.app")}
+            onClick={() => window.open("https://ancient-cherry.vercel.app")}
           >
             📷 Open WildScan Camera
           </button>
