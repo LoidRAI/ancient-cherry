@@ -12,13 +12,12 @@ function App() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [isCaptured, setIsCaptured] = useState(false);
 
-  // NEW: Track which camera lens we are using ("environment" = back, "user" = front)
+  // Track which camera lens we are using ("environment" = back, "user" = front)
   const [facingMode, setFacingMode] = useState("environment");
 
   const URL = "https://teachablemachine.withgoogle.com/models/qjWRn0dXc/";
 
   /* OPEN CAMERA */
-  // We allow passing a specific mode so it instantly updates when flipping
   const openScanner = async (currentMode = facingMode) => {
     try {
       setCameraOpen(true);
@@ -34,10 +33,15 @@ function App() {
       }
 
       /* CREATE WEBCAM */
-      const webcam = new tmImage.Webcam(350, 350, true);
+      // FIX 1: Only mirror the camera if we are using the front/user lens.
+      const isFront = currentMode === "user";
+
+      // FIX 2: Lower the resolution to 250x250.
+      // Many phones crash if you ask for an exact 350x350 square.
+      const webcam = new tmImage.Webcam(250, 250, isFront);
       webcamRef.current = webcam;
 
-      /* ASK CAMERA PERMISSION (Using our dynamic facingMode variable) */
+      /* ASK CAMERA PERMISSION */
       await webcam.setup({ facingMode: currentMode });
 
       /* START CAMERA */
@@ -51,7 +55,7 @@ function App() {
         webcamContainerRef.current.innerHTML = "";
         const canvas = webcam.canvas;
         canvas.style.width = "100%";
-        canvas.style.maxWidth = "350px";
+        canvas.style.maxWidth = "350px"; // We can still stretch it via CSS to look good
         canvas.style.borderRadius = "20px";
         canvas.style.border = "4px solid black";
         canvas.style.display = "block";
@@ -61,13 +65,18 @@ function App() {
 
       /* START VIDEO FEED */
       animationRef.current = window.requestAnimationFrame(liveFeedLoop);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Camera failed to start. Please allow camera permissions.");
+      // FIX 3: Show the ACTUAL error message the phone is throwing!
+      alert(
+        `Camera failed to start. Error: ${
+          error.message || error.name || "Unknown"
+        }`
+      );
     }
   };
 
-  /* NEW: FLIP CAMERA */
+  /* FLIP CAMERA */
   const flipCamera = async () => {
     // Determine the opposite camera
     const newMode = facingMode === "user" ? "environment" : "user";
@@ -192,7 +201,7 @@ function App() {
               </button>
             )}
 
-            {/* NEW: FLIP CAMERA BUTTON */}
+            {/* FLIP CAMERA BUTTON */}
             {!isCaptured && (
               <button
                 className="scanButton"
@@ -234,7 +243,7 @@ function App() {
                 </p>
               </div>
             </div>
-            {/* The rest of your cards remain unchanged */}
+            {/* You can add the rest of your cards back here! */}
           </div>
         </>
       )}
